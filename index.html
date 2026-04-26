@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VLOOKUP & HLOOKUP – Learn by Doing</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a40;
+    --v-color: #00e5ff;
+    --h-color: #ff6b35;
+    --accent: #a78bfa;
+    --success: #4ade80;
+    --error: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --highlight: #fde047;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* HEADER */
+  header {
+    padding: 48px 0 32px;
+    text-align: center;
+    position: relative;
+  }
+  .badge {
+    display: inline-block;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--accent);
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.3);
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  h1 .v { color: var(--v-color); }
+  h1 .h { color: var(--h-color); }
+  .subtitle { color: var(--muted); font-size: 14px; line-height: 1.7; max-width: 600px; margin: 0 auto; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin: 40px 0 32px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 1px;
+  }
+  .tab-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tab-btn.active.v { border-color: var(--v-color); color: var(--v-color); background: rgba(0,229,255,0.08); }
+  .tab-btn.active.h { border-color: var(--h-color); color: var(--h-color); background: rgba(255,107,53,0.08); }
+  .tab-btn.active.quiz { border-color: var(--accent); color: var(--accent); background: rgba(167,139,250,0.08); }
+
+  /* PANEL */
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* SECTION CARD */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  .card-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot.v { background: var(--v-color); box-shadow: 0 0 8px var(--v-color); }
+  .dot.h { background: var(--h-color); box-shadow: 0 0 8px var(--h-color); }
+  .dot.quiz { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+  /* FORMULA BOX */
+  .formula-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+    font-size: 15px;
+    position: relative;
+    overflow: hidden;
+  }
+  .formula-box::before {
+    content: 'SYNTAX';
+    position: absolute;
+    top: 8px; right: 12px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+  }
+  .fn-v { color: var(--v-color); font-weight: 700; }
+  .fn-h { color: var(--h-color); font-weight: 700; }
+  .fn-arg { color: var(--highlight); }
+  .fn-num { color: var(--success); }
+  .fn-bool { color: var(--accent); }
+
+  /* EXPLANATION GRID */
+  .args-grid { display: grid; gap: 10px; margin: 16px 0; }
+  .arg-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 12px;
+    align-items: start;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-radius: 8px;
+    border-left: 3px solid var(--border);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .arg-row.v { border-left-color: var(--v-color); }
+  .arg-row.h { border-left-color: var(--h-color); }
+  .arg-name { color: var(--highlight); font-weight: 700; font-size: 12px; }
+  .arg-desc { color: var(--muted); }
+
+  /* SPREADSHEET */
+  .spreadsheet-wrap { overflow-x: auto; }
+  .spreadsheet {
+    border-collapse: collapse;
+    font-size: 13px;
+    width: 100%;
+    min-width: 500px;
+  }
+  .spreadsheet th, .spreadsheet td {
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .spreadsheet thead th {
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 700;
+  }
+  .spreadsheet tbody tr:hover td { background: rgba(255,255,255,0.03); }
+  .spreadsheet tbody td:first-child { color: var(--muted); font-size: 11px; }
+  .highlight-row td { background: rgba(0,229,255,0.07) !important; }
+  .highlight-col { background: rgba(255,107,53,0.07) !important; }
+  .highlight-cell { background: rgba(253,224,71,0.2) !important; color: var(--highlight) !important; font-weight: 700; }
+
+  /* INTERACTIVE DEMO */
+  .demo-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0;
+    align-items: center;
+  }
+  .demo-controls label { font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+  .demo-controls select, .demo-controls input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .demo-controls select:focus, .demo-controls input:focus { border-color: var(--accent); }
+
+  .result-box {
+    background: var(--bg);
+    border: 1px solid var(--success);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.8;
+    display: none;
+  }
+  .result-box.show { display: block; animation: fadeIn 0.3s ease; }
+  .result-formula { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+  .result-value { font-size: 20px; font-weight: 700; color: var(--success); font-family: 'Unbounded', sans-serif; }
+  .result-explain { color: var(--muted); font-size: 12px; margin-top: 8px; line-height: 1.6; }
+
+  .run-btn {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    align-self: flex-end;
+  }
+  .run-btn.v { background: var(--v-color); color: var(--bg); }
+  .run-btn.v:hover { box-shadow: 0 0 16px var(--v-color); transform: translateY(-1px); }
+  .run-btn.h { background: var(--h-color); color: white; }
+  .run-btn.h:hover { box-shadow: 0 0 16px var(--h-color); transform: translateY(-1px); }
+
+  /* STEP VISUALIZER */
+  .steps { margin: 20px 0; display: grid; gap: 10px; }
+  .step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 14px;
+    background: var(--surface);
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    border: 1px solid transparent;
+    transition: border-color 0.3s, background 0.3s;
+    opacity: 0.4;
+  }
+  .step.active { opacity: 1; }
+  .step.active.v { border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.05); }
+  .step.active.h { border-color: rgba(255,107,53,0.3); background: rgba(255,107,53,0.05); }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+    font-family: 'Unbounded', sans-serif;
+  }
+  .step-num.v { background: var(--v-color); color: var(--bg); }
+  .step-num.h { background: var(--h-color); color: white; }
+
+  /* QUIZ */
+  .quiz-question {
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--surface);
+    border-radius: 10px;
+    border-left: 3px solid var(--accent);
+  }
+  .quiz-options { display: grid; gap: 10px; }
+  .quiz-opt {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .quiz-opt:hover:not(.answered) { border-color: var(--accent); background: rgba(167,139,250,0.08); }
+  .quiz-opt.correct { border-color: var(--success); background: rgba(74,222,128,0.1); color: var(--success); }
+  .quiz-opt.wrong { border-color: var(--error); background: rgba(248,113,113,0.1); color: var(--error); }
+  .quiz-opt-letter {
+    width: 26px; height: 26px; border-radius: 6px; background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .quiz-feedback {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.7;
+    display: none;
+  }
+  .quiz-feedback.show { display: block; animation: fadeIn 0.3s ease; }
+  .quiz-feedback.correct { background: rgba(74,222,128,0.1); border: 1px solid var(--success); color: var(--success); }
+  .quiz-feedback.wrong { background: rgba(248,113,113,0.1); border: 1px solid var(--error); color: var(--text); }
+
+  .quiz-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+  .quiz-progress { font-size: 12px; color: var(--muted); font-family: 'Unbounded', sans-serif; }
+  .nav-btn {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px; font-weight: 700;
+    padding: 10px 20px; border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text); cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .nav-btn:hover { border-color: var(--accent); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .score-display {
+    text-align: center;
+    padding: 40px;
+    display: none;
+  }
+  .score-display.show { display: block; animation: fadeIn 0.4s ease; }
+  .score-num {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 64px;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    margin: 16px 0;
+  }
+  .score-label { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .retry-btn {
+    font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 700;
+    padding: 12px 28px; border-radius: 8px; border: none;
+    background: var(--accent); color: white; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 1px;
+  }
+  .retry-btn:hover { box-shadow: 0 0 16px var(--accent); transform: translateY(-1px); }
+
+  /* DIFFERENCE TABLE */
+  .diff-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .diff-table th, .diff-table td { padding: 12px 16px; border: 1px solid var(--border); text-align: left; }
+  .diff-table thead tr { background: var(--surface); }
+  .diff-table th:nth-child(2) { color: var(--v-color); }
+  .diff-table th:nth-child(3) { color: var(--h-color); }
+  .diff-table td:nth-child(1) { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+  .diff-table tbody tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+
+  footer {
+    text-align: center;
+    padding: 48px 0 32px;
+    color: var(--muted);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="badge">📊 Spreadsheet Masterclass</div>
+    <h1><span class="v">V</span>LOOKUP &amp; <span class="h">H</span>LOOKUP</h1>
+    <p class="subtitle">Learn how to search and retrieve data from spreadsheets — interactively, practically, and visually.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active v" onclick="switchTab('v')">▼ VLOOKUP</button>
+    <button class="tab-btn h" onclick="switchTab('h')">▶ HLOOKUP</button>
+    <button class="tab-btn quiz" onclick="switchTab('quiz')">🎯 QUIZ</button>
+    <button class="tab-btn" onclick="switchTab('diff')" style="color:var(--muted)">⚖️ COMPARE</button>
+  </div>
+
+  <!-- ====== VLOOKUP PANEL ====== -->
+  <div id="panel-v" class="panel active">
+
+    <div class="card">
+      <div class="card-title"><span class="dot v"></span> What is VLOOKUP?</div>
+      <p style="font-size:14px;line-height:1.8;color:var(--muted)">
+        <strong style="color:var(--text)">V</strong>LOOKUP = <strong style="color:var(--text)">Vertical</strong> Lookup. It searches <em>down a column</em> to find a value, then returns something from the same row in another column. Think of it like looking up a student's name in a register and returning their marks.
+      </p>
+      <div class="formula-box">
+        =<span class="fn-v">VLOOKUP</span>(<span class="fn-arg">lookup_value</span>, <span class="fn-arg">table_array</span>, <span class="fn-num">col_index_num</span>, <span class="fn-bool">[range_lookup]</span>)
+      </div>
+      <div class="args-grid">
+        <div class="arg-row v"><span class="arg-name">lookup_value</span><span class="arg-desc">The value you want to find (e.g., a student ID or name)</span></div>
+        <div class="arg-row v"><span class="arg-name">table_array</span><span class="arg-desc">The range of cells that contains your data (the whole table)</span></div>
+        <div class="arg-row v"><span class="arg-name">col_index_num</span><span class="arg-desc">Which column number to return data from (1 = first column)</span></div>
+        <div class="arg-row v"><span class="arg-name">range_lookup</span><span class="arg-desc">FALSE = exact match (recommended), TRUE = approximate match</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot v"></span> Sample Data — Student Marks</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Use the controls below to search through this table and see how VLOOKUP works step by step.</p>
+      <div class="spreadsheet-wrap">
+        <table class="spreadsheet" id="v-table">
+          <thead>
+            <tr>
+              <th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td><strong>Student ID</strong></td><td><strong>Name</strong></td><td><strong>Math</strong></td><td><strong>Science</strong></td><td><strong>English</strong></td></tr>
+            <tr><td>2</td><td>S001</td><td>Aarav</td><td>88</td><td>92</td><td>78</td></tr>
+            <tr><td>3</td><td>S002</td><td>Priya</td><td>74</td><td>81</td><td>90</td></tr>
+            <tr><td>4</td><td>S003</td><td>Ravi</td><td>95</td><td>87</td><td>84</td></tr>
+            <tr><td>5</td><td>S004</td><td>Meera</td><td>62</td><td>70</td><td>77</td></tr>
+            <tr><td>6</td><td>S005</td><td>Kiran</td><td>89</td><td>94</td><td>91</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot v"></span> Interactive Demo — Try It!</div>
+      <div class="demo-controls">
+        <label>Search for Student ID
+          <select id="v-lookup-val">
+            <option value="S001">S001</option>
+            <option value="S002">S002</option>
+            <option value="S003">S003</option>
+            <option value="S004">S004</option>
+            <option value="S005">S005</option>
+          </select>
+        </label>
+        <label>Return column
+          <select id="v-col-idx">
+            <option value="2">2 — Name</option>
+            <option value="3">3 — Math</option>
+            <option value="4">4 — Science</option>
+            <option value="5">5 — English</option>
+          </select>
+        </label>
+        <button class="run-btn v" onclick="runVlookup()">▶ RUN</button>
+      </div>
+
+      <div class="steps" id="v-steps">
+        <div class="step active v"><span class="step-num v">1</span><span>VLOOKUP scans <strong>down column A</strong> (Student ID) looking for your value.</span></div>
+        <div class="step" id="vstep2"><span class="step-num v">2</span><span id="vstep2-text">When it finds a match, it highlights that entire row.</span></div>
+        <div class="step" id="vstep3"><span class="step-num v">3</span><span id="vstep3-text">It then moves right to column <strong>N</strong> and returns that cell's value.</span></div>
+      </div>
+
+      <div class="result-box" id="v-result">
+        <div class="result-formula" id="v-result-formula"></div>
+        <div class="result-value" id="v-result-val"></div>
+        <div class="result-explain" id="v-result-explain"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot v"></span> Real-Life Example</div>
+      <p style="font-size:13px;line-height:1.8;color:var(--muted)">Imagine you have 500 students. You type a Student ID in cell <strong style="color:var(--text)">H2</strong>, and want their Math marks automatically in <strong style="color:var(--text)">H3</strong>. You would write:</p>
+      <div class="formula-box">=<span class="fn-v">VLOOKUP</span>(<span class="fn-arg">H2</span>, <span class="fn-arg">A2:E501</span>, <span class="fn-num">3</span>, <span class="fn-bool">FALSE</span>)</div>
+      <p style="font-size:13px;color:var(--muted);margin-top:12px;">✅ <strong style="color:var(--text)">H2</strong> = the ID you type &nbsp;|&nbsp; <strong style="color:var(--text)">A2:E501</strong> = your data table &nbsp;|&nbsp; <strong style="color:var(--text)">3</strong> = Math is column 3 &nbsp;|&nbsp; <strong style="color:var(--text)">FALSE</strong> = exact match</p>
+    </div>
+
+  </div>
+
+  <!-- ====== HLOOKUP PANEL ====== -->
+  <div id="panel-h" class="panel">
+
+    <div class="card">
+      <div class="card-title"><span class="dot h"></span> What is HLOOKUP?</div>
+      <p style="font-size:14px;line-height:1.8;color:var(--muted)">
+        <strong style="color:var(--text)">H</strong>LOOKUP = <strong style="color:var(--text)">Horizontal</strong> Lookup. It searches <em>across a row</em> to find a value, then returns something from the same column in a row below. Perfect when your data headers run left to right (horizontally).
+      </p>
+      <div class="formula-box">
+        =<span class="fn-h">HLOOKUP</span>(<span class="fn-arg">lookup_value</span>, <span class="fn-arg">table_array</span>, <span class="fn-num">row_index_num</span>, <span class="fn-bool">[range_lookup]</span>)
+      </div>
+      <div class="args-grid">
+        <div class="arg-row h"><span class="arg-name">lookup_value</span><span class="arg-desc">The value to find in the first row of the table</span></div>
+        <div class="arg-row h"><span class="arg-name">table_array</span><span class="arg-desc">The range of cells that contains your horizontal data</span></div>
+        <div class="arg-row h"><span class="arg-name">row_index_num</span><span class="arg-desc">Which row number to return data from (1 = header row)</span></div>
+        <div class="arg-row h"><span class="arg-name">range_lookup</span><span class="arg-desc">FALSE = exact match (recommended), TRUE = approximate match</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot h"></span> Sample Data — Monthly Sales (Horizontal Layout)</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Notice how the months are across the top row — HLOOKUP is perfect for this layout!</p>
+      <div class="spreadsheet-wrap">
+        <table class="spreadsheet" id="h-table">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td><strong>Subject</strong></td><td><strong>Jan</strong></td><td><strong>Feb</strong></td><td><strong>Mar</strong></td><td><strong>Apr</strong></td><td><strong>May</strong></td></tr>
+            <tr><td>2</td><td>Class A</td><td>78</td><td>82</td><td>91</td><td>74</td><td>88</td></tr>
+            <tr><td>3</td><td>Class B</td><td>65</td><td>70</td><td>85</td><td>90</td><td>76</td></tr>
+            <tr><td>4</td><td>Class C</td><td>92</td><td>88</td><td>79</td><td>83</td><td>95</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot h"></span> Interactive Demo — Try It!</div>
+      <div class="demo-controls">
+        <label>Search for Month
+          <select id="h-lookup-val">
+            <option value="Jan">Jan</option>
+            <option value="Feb">Feb</option>
+            <option value="Mar">Mar</option>
+            <option value="Apr">Apr</option>
+            <option value="May">May</option>
+          </select>
+        </label>
+        <label>Return row
+          <select id="h-row-idx">
+            <option value="2">2 — Class A</option>
+            <option value="3">3 — Class B</option>
+            <option value="4">4 — Class C</option>
+          </select>
+        </label>
+        <button class="run-btn h" onclick="runHlookup()">▶ RUN</button>
+      </div>
+
+      <div class="steps" id="h-steps">
+        <div class="step active h"><span class="step-num h">1</span><span>HLOOKUP scans <strong>across row 1</strong> (Month headers) looking for your value.</span></div>
+        <div class="step" id="hstep2"><span class="step-num h">2</span><span id="hstep2-text">When it finds a match, it highlights that entire column.</span></div>
+        <div class="step" id="hstep3"><span class="step-num h">3</span><span id="hstep3-text">It then moves down to row <strong>N</strong> and returns that cell's value.</span></div>
+      </div>
+
+      <div class="result-box" id="h-result">
+        <div class="result-formula" id="h-result-formula"></div>
+        <div class="result-value" id="h-result-val"></div>
+        <div class="result-explain" id="h-result-explain"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ====== QUIZ PANEL ====== -->
+  <div id="panel-quiz" class="panel">
+    <div class="card">
+      <div class="card-title"><span class="dot quiz"></span> Knowledge Check</div>
+      <div id="quiz-body">
+        <div class="quiz-question" id="q-text"></div>
+        <div class="quiz-options" id="q-options"></div>
+        <div class="quiz-feedback" id="q-feedback"></div>
+        <div class="quiz-nav">
+          <span class="quiz-progress" id="q-progress"></span>
+          <button class="nav-btn" id="q-next" onclick="nextQuestion()" disabled>NEXT →</button>
+        </div>
+      </div>
+      <div class="score-display" id="score-display">
+        <div style="font-size:36px">🎉</div>
+        <div class="score-num" id="score-num"></div>
+        <div class="score-label" id="score-label"></div>
+        <button class="retry-btn" onclick="resetQuiz()">TRY AGAIN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== COMPARE PANEL ====== -->
+  <div id="panel-diff" class="panel">
+    <div class="card">
+      <div class="card-title"><span class="dot v"></span> VLOOKUP vs <span style="color:var(--h-color)">HLOOKUP</span></div>
+      <table class="diff-table">
+        <thead><tr><th>FEATURE</th><th>VLOOKUP</th><th>HLOOKUP</th></tr></thead>
+        <tbody>
+          <tr><td>SEARCH DIRECTION</td><td>Down a column ↓</td><td>Across a row →</td></tr>
+          <tr><td>DATA LAYOUT</td><td>Vertical (tall table)</td><td>Horizontal (wide table)</td></tr>
+          <tr><td>FIRST ARGUMENT</td><td>Value in first column</td><td>Value in first row</td></tr>
+          <tr><td>INDEX ARGUMENT</td><td>col_index_num</td><td>row_index_num</td></tr>
+          <tr><td>COMMON USE</td><td>Employee, student, product databases</td><td>Monthly/yearly reports, time-series</td></tr>
+          <tr><td>LIMITATION</td><td>Only searches leftmost column</td><td>Only searches topmost row</td></tr>
+          <tr><td>MODERN ALTERNATIVE</td><td colspan="2" style="color:var(--accent)">XLOOKUP (searches any direction, more powerful)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--highlight)">💡 Quick Tips</div>
+      <div class="args-grid">
+        <div class="arg-row" style="border-left-color:var(--success)"><span class="arg-name" style="color:var(--success)">TIP 1</span><span class="arg-desc">Always use <strong style="color:var(--text)">FALSE</strong> for range_lookup in most cases. TRUE can give wrong results if data isn't sorted.</span></div>
+        <div class="arg-row" style="border-left-color:var(--success)"><span class="arg-name" style="color:var(--success)">TIP 2</span><span class="arg-desc">Lock your table range with <strong style="color:var(--text)">$</strong> signs (e.g., $A$2:$E$100) so it doesn't shift when you copy the formula.</span></div>
+        <div class="arg-row" style="border-left-color:var(--success)"><span class="arg-name" style="color:var(--success)">TIP 3</span><span class="arg-desc">VLOOKUP can only look <strong style="color:var(--text)">right</strong>. If your return column is to the left of your search column, use INDEX-MATCH instead.</span></div>
+        <div class="arg-row" style="border-left-color:var(--success)"><span class="arg-name" style="color:var(--success)">TIP 4</span><span class="arg-desc">If you get <strong style="color:var(--text)">#N/A</strong>, the value wasn't found. Check for extra spaces or spelling mismatches.</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="container">
+    Built for students learning spreadsheet formulas &nbsp;·&nbsp; VLOOKUP & HLOOKUP Interactive Guide
+  </div>
+</footer>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────
+const vData = {
+  S001: { Name:'Aarav',  Math:88, Science:92, English:78 },
+  S002: { Name:'Priya',  Math:74, Science:81, English:90 },
+  S003: { Name:'Ravi',   Math:95, Science:87, English:84 },
+  S004: { Name:'Meera',  Math:62, Science:70, English:77 },
+  S005: { Name:'Kiran',  Math:89, Science:94, English:91 }
+};
+const vColNames = { 2:'Name', 3:'Math', 4:'Science', 5:'English' };
+const vRowMap   = { S001:2, S002:3, S003:4, S004:5, S005:6 };
+const vColMap   = { 2:'B', 3:'C', 4:'D', 5:'E' };
+
+const hData = {
+  Jan:{ 2:78, 3:65, 4:92 },
+  Feb:{ 2:82, 3:70, 4:88 },
+  Mar:{ 2:91, 3:85, 4:79 },
+  Apr:{ 2:74, 3:90, 4:83 },
+  May:{ 2:88, 3:76, 4:95 }
+};
+const hColMap  = { Jan:2, Feb:3, Mar:4, Apr:5, May:6 };
+const hRowName = { 2:'Class A', 3:'Class B', 4:'Class C' };
+
+// ─── TABS ───────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active','v','h','quiz'));
+  document.getElementById('panel-' + name).classList.add('active');
+  const btn = document.querySelectorAll('.tab-btn')[['v','h','quiz','diff'].indexOf(name)];
+  btn.classList.add('active', name === 'diff' ? '' : name);
+  if (name === 'quiz' && currentQ === 0) loadQuestion();
+}
+
+// ─── VLOOKUP ────────────────────────────────────────────
+function clearVTable() {
+  document.querySelectorAll('#v-table tr').forEach(r => r.classList.remove('highlight-row'));
+  document.querySelectorAll('#v-table td').forEach(c => c.classList.remove('highlight-cell','highlight-col'));
+}
+
+function runVlookup() {
+  const val = document.getElementById('v-lookup-val').value;
+  const col = parseInt(document.getElementById('v-col-idx').value);
+  clearVTable();
+
+  // Step animations
+  const s2 = document.getElementById('vstep2');
+  const s3 = document.getElementById('vstep3');
+  s2.classList.remove('active'); s3.classList.remove('active');
+
+  setTimeout(() => {
+    const rowIdx = vRowMap[val];
+    const rows = document.querySelectorAll('#v-table tbody tr');
+    rows[rowIdx - 2].classList.add('highlight-row');
+    s2.classList.add('active');
+    document.getElementById('vstep2-text').textContent =
+      `Found "${val}" in row ${rowIdx}! The entire row is highlighted.`;
+  }, 400);
+
+  setTimeout(() => {
+    const rowIdx = vRowMap[val];
+    const rows = document.querySelectorAll('#v-table tbody tr');
+    const cell = rows[rowIdx - 2].querySelectorAll('td')[col];
+    if (cell) { cell.classList.add('highlight-cell'); }
+    s3.classList.add('active');
+    document.getElementById('vstep3-text').textContent =
+      `Moving to column ${col} (${vColNames[col]}) → Returns the value in cell ${vColMap[col]}${rowIdx}.`;
+
+    const result = vData[val][vColNames[col]];
+    const rb = document.getElementById('v-result');
+    document.getElementById('v-result-formula').textContent =
+      `=VLOOKUP("${val}", A2:E6, ${col}, FALSE)`;
+    document.getElementById('v-result-val').textContent = result;
+    document.getElementById('v-result-explain').textContent =
+      `VLOOKUP found "${val}" in row ${rowIdx}, then returned the value from column ${col} (${vColNames[col]}): ${result}`;
+    rb.classList.add('show');
+  }, 900);
+}
+
+// ─── HLOOKUP ────────────────────────────────────────────
+function clearHTable() {
+  document.querySelectorAll('#h-table td').forEach(c => c.classList.remove('highlight-cell','highlight-col','highlight-row'));
+}
+
+function runHlookup() {
+  const val  = document.getElementById('h-lookup-val').value;
+  const row  = parseInt(document.getElementById('h-row-idx').value);
+  clearHTable();
+
+  const s2 = document.getElementById('hstep2');
+  const s3 = document.getElementById('hstep3');
+  s2.classList.remove('active'); s3.classList.remove('active');
+
+  const colIdx = hColMap[val]; // 2–6
+
+  setTimeout(() => {
+    // Highlight header col cell
+    const headerRow = document.querySelectorAll('#h-table tbody tr')[0];
+    const headerCells = headerRow.querySelectorAll('td');
+    headerCells[colIdx - 1].classList.add('highlight-row');
+    s2.classList.add('active');
+    document.getElementById('hstep2-text').textContent =
+      `Found "${val}" in column ${colIdx} of row 1! The column is highlighted.`;
+  }, 400);
+
+  setTimeout(() => {
+    const targetRow = document.querySelectorAll('#h-table tbody tr')[row - 1];
+    const targetCell = targetRow.querySelectorAll('td')[colIdx - 1];
+    if (targetCell) targetCell.classList.add('highlight-cell');
+    s3.classList.add('active');
+    document.getElementById('hstep3-text').textContent =
+      `Moving down to row ${row} (${hRowName[row]}) → Returns the value in that cell.`;
+
+    const result = hData[val][row];
+    const rb = document.getElementById('h-result');
+    document.getElementById('h-result-formula').textContent =
+      `=HLOOKUP("${val}", A1:F4, ${row}, FALSE)`;
+    document.getElementById('h-result-val').textContent = result;
+    document.getElementById('h-result-explain').textContent =
+      `HLOOKUP found "${val}" in column ${colIdx}, then returned the value from row ${row} (${hRowName[row]}): ${result}`;
+    rb.classList.add('show');
+  }, 900);
+}
+
+// ─── QUIZ ───────────────────────────────────────────────
+const questions = [
+  {
+    q: 'What does the "V" in VLOOKUP stand for?',
+    opts: ['Value', 'Vertical', 'Variable', 'Vector'],
+    correct: 1,
+    explain: 'VLOOKUP stands for Vertical Lookup — it searches DOWN a column (vertically).'
+  },
+  {
+    q: 'In =VLOOKUP("S003", A2:E6, 3, FALSE), what does the number 3 mean?',
+    opts: ['Search the 3rd row', 'Return data from the 3rd column', 'Find 3 matches', 'Skip 3 rows'],
+    correct: 1,
+    explain: 'The col_index_num (3) tells VLOOKUP to return the value from the 3rd column of the table range — which is the Math column.'
+  },
+  {
+    q: 'When should you use HLOOKUP instead of VLOOKUP?',
+    opts: [
+      'When data is in a tall vertical table',
+      'When headers are across the top row (horizontal layout)',
+      'When you need to look up numbers only',
+      'When the table has more than 100 rows'
+    ],
+    correct: 1,
+    explain: 'HLOOKUP is designed for horizontal data where your categories/headers run across the top row, and the data fills in rows below.'
+  },
+  {
+    q: 'What value should range_lookup be for an EXACT match?',
+    opts: ['TRUE', '1', 'FALSE', 'EXACT'],
+    correct: 2,
+    explain: 'Use FALSE (or 0) for an exact match. Using TRUE can return wrong results if the data is not sorted in ascending order.'
+  },
+  {
+    q: 'What error does VLOOKUP return when it cannot find the value?',
+    opts: ['#VALUE!', '#REF!', '#N/A', '#DIV/0!'],
+    correct: 2,
+    explain: '#N/A means "Not Available" — VLOOKUP shows this when it cannot find the lookup_value in the first column of the table.'
+  },
+  {
+    q: 'In =HLOOKUP("Mar", A1:F4, 3, FALSE), what does row_index_num = 3 refer to?',
+    opts: [
+      'Search in the 3rd column',
+      'Return value from the 3rd row of the table range',
+      'Skip the first 3 rows',
+      'Find the top 3 results'
+    ],
+    correct: 1,
+    explain: 'row_index_num = 3 means HLOOKUP will return the value from the 3rd row of the table range. Row 1 is headers, row 2 is Class A, row 3 is Class B.'
+  },
+  {
+    q: 'Which formula correctly finds the English marks of student "S002"?',
+    opts: [
+      '=VLOOKUP("S002", A2:E6, 2, FALSE)',
+      '=VLOOKUP("S002", A2:E6, 5, FALSE)',
+      '=HLOOKUP("S002", A2:E6, 5, FALSE)',
+      '=VLOOKUP(5, A2:E6, "S002", FALSE)'
+    ],
+    correct: 1,
+    explain: 'English is in column 5 of the table. So =VLOOKUP("S002", A2:E6, 5, FALSE) is correct. HLOOKUP is wrong here because data is vertical.'
+  }
+];
+
+let currentQ = 0;
+let score = 0;
+let answered = false;
+let answers = [];
+
+function loadQuestion() {
+  const q = questions[currentQ];
+  answered = false;
+  document.getElementById('q-text').textContent = (currentQ + 1) + '. ' + q.q;
+  document.getElementById('q-progress').textContent = `Question ${currentQ + 1} of ${questions.length}`;
+  document.getElementById('q-next').disabled = true;
+  document.getElementById('q-feedback').className = 'quiz-feedback';
+  document.getElementById('q-feedback').innerHTML = '';
+
+  const opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.opts.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'quiz-opt';
+    div.innerHTML = `<span class="quiz-opt-letter">${letters[i]}</span><span>${opt}</span>`;
+    div.onclick = () => selectAnswer(i, div);
+    opts.appendChild(div);
+  });
+}
+
+function selectAnswer(idx, el) {
+  if (answered) return;
+  answered = true;
+  const q = questions[currentQ];
+  const allOpts = document.querySelectorAll('.quiz-opt');
+  allOpts.forEach(o => o.classList.add('answered'));
+
+  const fb = document.getElementById('q-feedback');
+  if (idx === q.correct) {
+    el.classList.add('correct');
+    score++;
+    fb.className = 'quiz-feedback correct show';
+    fb.innerHTML = '✅ Correct! ' + q.explain;
+  } else {
+    el.classList.add('wrong');
+    allOpts[q.correct].classList.add('correct');
+    fb.className = 'quiz-feedback wrong show';
+    fb.innerHTML = '❌ Not quite. ' + q.explain;
+  }
+  document.getElementById('q-next').disabled = false;
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) {
+    showScore();
+  } else {
+    loadQuestion();
+  }
+}
+
+function showScore() {
+  document.getElementById('quiz-body').style.display = 'none';
+  const sd = document.getElementById('score-display');
+  sd.classList.add('show');
+  document.getElementById('score-num').textContent = `${score}/${questions.length}`;
+  const pct = Math.round(score / questions.length * 100);
+  let msg = pct === 100 ? '🏆 Perfect Score! You are a LOOKUP master!' :
+            pct >= 70  ? '👍 Great job! Review the ones you missed.' :
+                         '📚 Keep practising — you\'ll get there!';
+  document.getElementById('score-label').textContent = msg;
+}
+
+function resetQuiz() {
+  currentQ = 0; score = 0; answered = false;
+  document.getElementById('quiz-body').style.display = 'block';
+  document.getElementById('score-display').classList.remove('show');
+  loadQuestion();
+}
+
+// Init quiz when loaded
+loadQuestion();
+</script>
+</body>
+</html>
